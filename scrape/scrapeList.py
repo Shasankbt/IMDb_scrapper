@@ -27,18 +27,27 @@ def saveData(newData, data_type):
         print(f"{Colors.GREEN} Saved {file_map[data_type]}{Colors.RESET}")
     else:
         raise ValueError(f"Invalid data type: {data_type}")
+    
+
 
 def writeDatafromList(imdbID, task_idx, total_tasks, newData, data_type, driver=None):
-    # if exiting.is_set():
-    #     return
+    def includedInDatabase(imdbID, database):
+        if imdbID not in database:
+            return False
+        if database[imdbID] == None:
+            return False 
+        return True
+    
     if task_idx % 100 == 0: # save to file for every 100 tasks
         saveData(newData, data_type)
         print(f"{Colors.PINK} ({task_idx}/{total_tasks}) : saving the loaded data onto file at {task_idx}/{total_tasks}")
-    if imdbID in newData.keys():
+    if includedInDatabase(imdbID, newData):
         print(f"{Colors.GREY} ({task_idx}/{total_tasks}) : already in the data, returning{Colors.RESET}")
         return
     print(f"{Colors.BLUE}starting ({task_idx}/{total_tasks}) : {imdbID}{Colors.RESET}")
     start_time = time.time()
+    
+    # ---- core execution ----
     try:
         if driver:
             newData[imdbID] = getDataFromImdbID(imdbID, driver, print_feedback=False)
@@ -46,8 +55,10 @@ def writeDatafromList(imdbID, task_idx, total_tasks, newData, data_type, driver=
             newData[imdbID] = getDataFromImdbID(imdbID, print_feedback=False)
         print(f"{Colors.GREEN}({task_idx})/({total_tasks}) : Scrapped successfully for {imdbID}{Colors.RESET}")
     except Exception as e:
-        print(f"{Colors.RED}an error {e} has occurred for {imdbID}{Colors.RESET}")
-
+        print(f"{Colors.RED}({task_idx}/{total_tasks}) : an error <{e}> has occurred for {imdbID}{Colors.RESET}")
+        print(f"{Colors.YELLOW}----[ thread paused for 60sec ]----")
+        time.sleep(60)
+    # ------------------------
     
     print(f"completed in {time.time() - start_time} sec")
     print("-------------------------------------------------------")

@@ -2,6 +2,9 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 import signal
 import threading
 import json
+import random
+
+THREAD_COUNT = 8
 
 class Colors:
     RED = '\033[91m'
@@ -24,9 +27,11 @@ class multiThreadExec:
         self.output_json = output_json
         self.output_json_loc = output_json_loc
         self.drivers = drivers
-        self.thread_count = 8 if drivers is None else len(drivers)
+        self.thread_count = THREAD_COUNT if drivers is None else len(drivers)
         self.exiting = threading.Event()
         self.tasks = []  # Initialize task list
+
+        random.shuffle(input_list)
 
     def start(self):
         with ThreadPoolExecutor(self.thread_count) as executor:

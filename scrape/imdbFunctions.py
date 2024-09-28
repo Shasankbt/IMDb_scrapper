@@ -2,7 +2,9 @@ import requests
 from bs4 import BeautifulSoup
 import traceback
 import re
-
+from fake_useragent import UserAgent
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
 
 class Colors:
     RED = '\033[91m'
@@ -14,9 +16,25 @@ class Colors:
     YELLOW = '\033[93m'
     GREY = '\033[90m'
 
+ua = UserAgent()
+
+# Set up a retry strategy
+retry_strategy = Retry(
+    total=3,  # Number of retries
+    backoff_factor=1,  # Wait time multiplier between retries (1, 2, 4 seconds)
+    status_forcelist=[429, 500, 502, 503, 504],  # Retry on these HTTP codes
+    allowed_methods=["HEAD", "GET", "OPTIONS"]
+)
+
+adapter = HTTPAdapter(max_retries=retry_strategy)
+http = requests.Session()
+http.mount("http://", adapter)
+http.mount("https://", adapter)
+
 def getBSfromURL(url):
     response = requests.get(url, headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+        "User-Agent": ua.random,
+        # "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
         "Accept-Language": "en-US,en;q=0.5",
     }, timeout=60)
     return BeautifulSoup(response.content, "html.parser")
@@ -198,8 +216,8 @@ def getDataFromImdbID(imdbID, print_feedback = True, item_type="", episode_detai
         return movie
 
     except Exception as e:
-        print(f"{Colors.RED}unable to get movie due to --{e}--  on line {traceback.extract_tb(e.__traceback__)[0][1]}{Colors.RESET}")
-
+        print(f"{Colors.RED}unable to get movie <{imdbID}> due to --{e}--  on line {traceback.extract_tb(e.__traceback__)[0][1]}{Colors.RESET}")
+        raise
 
 def getIMDBextras(imdbID, driver, print_feedback = True):
     print("fasdkfaf")
